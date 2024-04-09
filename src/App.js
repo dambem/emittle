@@ -14,7 +14,7 @@ function App() {
   const [countries, setCountries] = useState([]);
   const [countryMap, setCountryMap] = useState([])
   const [emissionData, setEmissionData] = useState([])
-
+  const [countryLocation, setCountryLocation] = useState([])
   const [data, setData] = useState([]);
   const [elecData, setElecData] = useState([])  
   const [selectedCountry, setSelectedCountry] = useState('');
@@ -30,16 +30,15 @@ function App() {
       })
       .catch(error => console.error(error));
   }, []);
+
+
   useEffect(() => {
     const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.Entity === selectedCountry);
-    console.log(elecFiltered)
     const x_data = []
     const y_data = []
     elecFiltered.forEach(entry => {
       x_data.push('Gas', 'Coal', 'BioEnergy', 'Hydropower', 'Nuclear', 'Oil', 'Other Renewables', 'Solar')
       y_data.push(entry.gas, entry.coal, entry.bioenergy, entry.hydro, entry.nuclear, entry.oil, entry.other_renewables, entry.solar)
-      console.log(entry)
-      console.log(entry.nuclear)
     })
 
     setElecChartData({
@@ -49,20 +48,7 @@ function App() {
         type: 'bar'
       }],
   })
-  console.log(elecChartData)
-    // const x = ['Bio-Energy'];
-    // const y = [];
 
-        // console.log(elecFiltered[10])
-    // const chartData = {
-    //   x: Object.keys(elecFiltered[0]).slice(3), // Exclude 'Entity', 'Code', and 'Year' columns
-    //   y: Object.values(elecFiltered[0]).slice(3).map(value => parseFloat(value)),
-    //   type: 'bar'
-    // };
-    // setElecChartData(chartData)
-      // Prepare data for the bar chart
-
-  // Fetch the list of countries from CSV
   }, [elecData, selectedCountry]);
 
   useState(() => {
@@ -70,8 +56,10 @@ function App() {
       .then(response => response.text())
       .then(text => {
         const result = Papa.parse(text, { header: true });
+        
         const countryList = result.data.map(row => row.Country);
         setCountries(countryList)
+        setCountryLocation(result.data)
       })
       .catch(error => console.error(error));
   }, []);
@@ -176,15 +164,19 @@ function App() {
 
   const handleGuessSubmit = () => {
     const index = countries.indexOf(guess);
+    console.log(guess)
     if (index === -1) {
       setDistanceAway(null); // Reset distance if the country is not found in the list
       return;
     }
 
+    const country_loc = countryLocation.filter(entry => entry.Country === guess);
+    const chosen_country = countryLocation.filter(entry => entry.Country === TARGET_COUNTRY.name)
+
     // Calculate distance between guess and target country
     const distance = haversine(
-      { latitude: Math.random() * 180 - 90, longitude: Math.random() * 360 - 180 },
-      { latitude: TARGET_COUNTRY.lat, longitude: TARGET_COUNTRY.lon }
+      { latitude: chosen_country[0].lat, longitude: chosen_country[0].lon },
+      { latitude: country_loc[0].lat, longitude: country_loc[0].lon }
     );
 
     // Set distance away
@@ -226,9 +218,10 @@ function App() {
         inputProps={inputProps}
       />
       <button onClick={handleGuessSubmit}>Guess</button>
-      {distanceAway !== null && (
-        <p>Distance away from {TARGET_COUNTRY.name}: {distanceAway.toFixed(2)} km</p>
+      {distanceAway !== null  && (
+        <p>Distance away: {distanceAway.toFixed(2)} km</p>
       )}
+      
     </div>
   );
 }
