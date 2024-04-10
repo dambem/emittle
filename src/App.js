@@ -5,7 +5,7 @@ import Papa from 'papaparse'; // Import PapaParse library for parsing CSV
 import Plot from 'react-plotly.js';
 import IcicleChart from './Icicle';
 
-const TARGET_COUNTRY = { name: 'France', lat: 46.603354, lon: 1.888334 }; // Example target country
+const TARGET_COUNTRY = { name: 'Iceland', lat: 46.603354, lon: 1.888334 }; // Example target country
 
 function App() {
   const [guess, setGuess] = useState('');
@@ -16,8 +16,8 @@ function App() {
   const [emissionData, setEmissionData] = useState([])
   const [countryLocation, setCountryLocation] = useState([])
   const [data, setData] = useState([]);
-  const [elecData, setElecData] = useState([])  
-  const [selectedCountry, setSelectedCountry] = useState('');
+  const [elecData, setElecData] = useState([])
+  const [selectedCountry, setSelectedCountry] = useState('Iceland');
   const [sankeyData, setSankeyData] = useState({});
   const [elecChartData, setElecChartData] = useState({})
 
@@ -47,7 +47,7 @@ function App() {
         y: y_data,
         type: 'bar'
       }],
-  })
+    })
 
   }, [elecData, selectedCountry]);
 
@@ -56,14 +56,14 @@ function App() {
       .then(response => response.text())
       .then(text => {
         const result = Papa.parse(text, { header: true });
-        
+
         const countryList = result.data.map(row => row.Country);
         setCountries(countryList)
         setCountryLocation(result.data)
       })
       .catch(error => console.error(error));
   }, []);
-  
+
   useEffect(() => {
     // Filter data based on selected country
     const countryData = data.filter(entry => entry.Country === selectedCountry);
@@ -187,27 +187,27 @@ function App() {
     <div className="App">
       <h1>Country Wordle</h1>
       <div>
-        <div style={{'display': 'flex'}}> 
-      <Plot
-        data={sankeyData.data}
-        layout={{ width: '50%', height: 500, title: `Emissions Sankey Diagram` }}
-      />
-      
-        <Plot
-        data={elecChartData.data}
-        layout={{ width: '50%', height: 500, title: `Electricity Production by Source`, xaxis: { title: 'Source' }, yaxis: { title: 'TWh' }}}
-      />
+        <div style={{ 'display': 'flex' }}>
+          <Plot
+            data={sankeyData.data}
+            layout={{ width: '50%', height: 500, title: `Emissions Sankey Diagram` }}
+          />
+
+          <Plot
+            data={elecChartData.data}
+            layout={{ width: '50%', height: 500, title: `Electricity Production by Source`, xaxis: { title: 'Source' }, yaxis: { title: 'TWh' } }}
+          />
+        </div>
+        <select onChange={handleCountryChange} style={{ 'display': 'none' }}>
+          <option value="Iceland">Iceland</option>
+          {/* Populate dropdown with unique countries from data */}
+          {Array.from(new Set(data.map(entry => entry.Country))).map(country => (
+            <option key={country} value={country}>{country}</option>
+          ))}
+        </select>
+
+
       </div>
-      <select onChange={handleCountryChange}>
-        <option value="United States">Select a country</option>
-        {/* Populate dropdown with unique countries from data */}
-        {Array.from(new Set(data.map(entry => entry.Country))).map(country => (
-          <option key={country} value={country}>{country}</option>
-        ))}
-      </select>
-
-
-    </div>
       <p>Guess the country!</p>
       <Autosuggest
         suggestions={suggestions}
@@ -218,10 +218,10 @@ function App() {
         inputProps={inputProps}
       />
       <button onClick={handleGuessSubmit}>Guess</button>
-      {distanceAway !== null  && (
+      {distanceAway !== null && (
         <p>Distance away: {distanceAway.toFixed(2)} km</p>
       )}
-      
+
     </div>
   );
 }
