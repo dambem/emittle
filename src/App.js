@@ -1,10 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
+import { ChakraProvider } from '@chakra-ui/react'
+import { Button, ButtonGroup } from '@chakra-ui/react'
+import { Container } from '@chakra-ui/react'
+import { Center, Square, Circle } from '@chakra-ui/react'
+import { Heading, Highlight } from '@chakra-ui/react'
+
 import Autosuggest from 'react-autosuggest';
 import haversine from 'haversine-distance';
 import Papa from 'papaparse'; // Import PapaParse library for parsing CSV
 import Plot from 'react-plotly.js';
 import IcicleChart from './Icicle';
-
 const TARGET_COUNTRY = { name: 'Iceland', lat: 46.603354, lon: 1.888334 }; // Example target country
 
 function App() {
@@ -20,9 +26,14 @@ function App() {
   const [selectedCountry, setSelectedCountry] = useState('Iceland');
   const [sankeyData, setSankeyData] = useState({});
   const [elecChartData, setElecChartData] = useState({})
+  const [guesses, setGuesses] = useState(Array(5).fill(null));
+  const [gameOver, setGameOver] = useState(false);
+  const [message, setMessage] = useState('');
+
+
 
   useState(() => {
-    fetch('/electricity_source.csv')
+    fetch('/electricitysource.csv')
       .then(response => response.text())
       .then(text => {
         const result = Papa.parse(text, { header: true }).data;
@@ -37,8 +48,8 @@ function App() {
     const x_data = []
     const y_data = []
     elecFiltered.forEach(entry => {
-      x_data.push('Gas', 'Coal', 'BioEnergy', 'Hydropower', 'Nuclear', 'Oil', 'Other Renewables', 'Solar')
-      y_data.push(entry.gas, entry.coal, entry.bioenergy, entry.hydro, entry.nuclear, entry.oil, entry.other_renewables, entry.solar)
+      x_data.push('Gas', 'Coal', 'BioEnergy', 'Hydropower', 'Nuclear', 'Oil', 'Other Renewables', 'Solar', 'Wind')
+      y_data.push(entry.gas, entry.coal, entry.bioenergy, entry.hydro, entry.nuclear, entry.oil, entry.other_renewables, entry.solar, entry.wind)
     })
 
     setElecChartData({
@@ -137,7 +148,7 @@ function App() {
     const inputLength = inputValue.length;
     return inputLength === 0 ? [] : countries.filter(country =>
       country.toLowerCase().slice(0, inputLength) === inputValue
-    );
+    ).slice(0, 3);
   };
 
   const onSuggestionsFetchRequested = ({ value }) => {
@@ -164,6 +175,8 @@ function App() {
 
   const handleGuessSubmit = () => {
     const index = countries.indexOf(guess);
+
+
     console.log(guess)
     if (index === -1) {
       setDistanceAway(null); // Reset distance if the country is not found in the list
@@ -172,32 +185,51 @@ function App() {
 
     const country_loc = countryLocation.filter(entry => entry.Country === guess);
     const chosen_country = countryLocation.filter(entry => entry.Country === TARGET_COUNTRY.name)
-
-    // Calculate distance between guess and target country
     const distance = haversine(
       { latitude: chosen_country[0].lat, longitude: chosen_country[0].lon },
       { latitude: country_loc[0].lat, longitude: country_loc[0].lon }
-    );
+    )/1000;
 
+    const newGuesses = [...guesses];
+    const index2 = newGuesses.findIndex((g) => g === null);
+    newGuesses[index2] = [guess, distance]
+
+    if (guess == TARGET_COUNTRY.name) {
+      setMessage( <Highlight query='won'  styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
+    } else if (newGuesses.every((g) => g !== null)) {
+      setMessage("Boo, you lost :(")
+    }
+    // Calculate distance between guess and target country
+
+    setGuesses(newGuesses);
     // Set distance away
     setDistanceAway(distance);
   };
 
   return (
+    <ChakraProvider>
+
     <div className="App">
-      <h1>Country Wordle</h1>
-      <div>
+      <Center>
+      <Heading>Emittle</Heading>
+      </Center>
+      <Center>
+      <h2>Guess the country based on the emission data</h2>
+      </Center>
+      
+      <Center>
         <div style={{ 'display': 'flex' }}>
           <Plot
             data={sankeyData.data}
-            layout={{ width: '50%', height: 500, title: `Emissions Sankey Diagram` }}
+            layout={{ width: '50%', height: '10%', title: `Emissions Sankey Diagram` }}
           />
 
           <Plot
             data={elecChartData.data}
-            layout={{ width: '50%', height: 500, title: `Electricity Production by Source`, xaxis: { title: 'Source' }, yaxis: { title: 'TWh' } }}
+            layout={{ width: '50%', height: '10%', title: `Electricity Production by Source`, xaxis: { title: 'Source' }, yaxis: { title: 'TWh' } }}
           />
         </div>
+
         <select onChange={handleCountryChange} style={{ 'display': 'none' }}>
           <option value="Iceland">Iceland</option>
           {/* Populate dropdown with unique countries from data */}
@@ -206,23 +238,48 @@ function App() {
           ))}
         </select>
 
-
-      </div>
-      <p>Guess the country!</p>
-      <Autosuggest
-        suggestions={suggestions}
-        onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-        onSuggestionsClearRequested={onSuggestionsClearRequested}
-        getSuggestionValue={getSuggestionValue}
-        renderSuggestion={renderSuggestion}
-        inputProps={inputProps}
-      />
-      <button onClick={handleGuessSubmit}>Guess</button>
-      {distanceAway !== null && (
+      </Center>
+      <Center><Heading>{message}</Heading></Center>
+      <br></br>
+      <Center>
+      <ul>
+        {guesses.map((guess, index) => {
+          if (guess != null ){
+            return (
+            <div key={index}>{guess[0]}  {guess[1].toFixed(0)}km</div>
+            )
+          } else { 
+            return(
+       <div
+            key={index}
+            style={{
+              width: '300px',
+              height: '25px',
+              border: '1px dashed gray',
+              margin: '5px',
+            }}
+          ></div>
+)
+          }
+        })}
+      </ul>
+      </Center>
+      <Center>
+        <Autosuggest
+          suggestions={suggestions}
+          onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+          onSuggestionsClearRequested={onSuggestionsClearRequested}
+          getSuggestionValue={getSuggestionValue}
+          renderSuggestion={renderSuggestion}
+          inputProps={inputProps}
+        />
+      <Button onClick={handleGuessSubmit}>Guess</Button>
+      {/* {distanceAway !== null && (
         <p>Distance away: {distanceAway.toFixed(2)} km</p>
-      )}
-
+      )} */}
+      </Center>
     </div>
+    </ChakraProvider>
   );
 }
 
