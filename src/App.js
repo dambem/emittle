@@ -5,13 +5,13 @@ import { Button, ButtonGroup } from '@chakra-ui/react'
 import { Container } from '@chakra-ui/react'
 import { Center, Square, Circle } from '@chakra-ui/react'
 import { Heading, Highlight } from '@chakra-ui/react'
-
+import Arrow from './Arrow'
 import Autosuggest from 'react-autosuggest';
 import haversine from 'haversine-distance';
 import Papa from 'papaparse'; // Import PapaParse library for parsing CSV
 import Plot from 'react-plotly.js';
 import IcicleChart from './Icicle';
-const TARGET_COUNTRY = { name: 'Iceland', lat: 46.603354, lon: 1.888334 }; // Example target country
+const TARGET_COUNTRY = { name: 'China', lat: 46.603354, lon: 1.888334 }; // Example target country
 
 function App() {
   const [guess, setGuess] = useState('');
@@ -23,14 +23,41 @@ function App() {
   const [countryLocation, setCountryLocation] = useState([])
   const [data, setData] = useState([]);
   const [elecData, setElecData] = useState([])
-  const [selectedCountry, setSelectedCountry] = useState('Iceland');
+  const [selectedCountry, setSelectedCountry] = useState('China');
   const [sankeyData, setSankeyData] = useState({});
   const [elecChartData, setElecChartData] = useState({})
   const [guesses, setGuesses] = useState(Array(5).fill(null));
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState('');
+// Converts from degrees to radians.
+  function toRadians(degrees) {
+    return degrees * Math.PI / 180;
+  };
+  
+  // Converts from radians to degrees.
+  function toDegrees(radians) {
+    return radians * 180 / Math.PI;
+  }
 
+  function bearing(startLat, startLng, destLat, destLng){
+    startLat = toRadians(startLat);
+    startLng = toRadians(startLng);
+    destLat = toRadians(destLat);
+    destLng = toRadians(destLng);
+  
+    const y = Math.sin(destLng - startLng) * Math.cos(destLat);
+    const x = Math.cos(startLat) * Math.sin(destLat) -
+          Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
+    const brng = (toDegrees(Math.atan2(y, x)) + 360) % 360;
+    var bearings = ["NE", "E", "SE", "S", "SW", "W", "NW", "N"];
 
+    var index = brng - 22.5;
+    if (index < 0)
+        index += 360;
+    index = parseInt(index / 45);
+    return(bearings[index]);
+
+  }
 
   useState(() => {
     fetch('/electricitysource.csv')
@@ -192,7 +219,8 @@ function App() {
 
     const newGuesses = [...guesses];
     const index2 = newGuesses.findIndex((g) => g === null);
-    newGuesses[index2] = [guess, distance]
+    var degree = bearing(country_loc[0].lat, country_loc[0].lon, chosen_country[0].lat, chosen_country[0].lon)
+    newGuesses[index2] = [guess, distance, degree]
 
     if (guess == TARGET_COUNTRY.name) {
       setMessage( <Highlight query='won'  styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
@@ -220,11 +248,13 @@ function App() {
       <Center>
         <div style={{ 'display': 'flex' }}>
           <Plot
+            config={{displayModeBar:false}}
             data={sankeyData.data}
             layout={{ width: '50%', height: '10%', title: `Emissions Sankey Diagram` }}
           />
 
           <Plot
+            config={{displayModeBar:false}}
             data={elecChartData.data}
             layout={{ width: '50%', height: '10%', title: `Electricity Production by Source`, xaxis: { title: 'Source' }, yaxis: { title: 'TWh' } }}
           />
@@ -246,7 +276,13 @@ function App() {
         {guesses.map((guess, index) => {
           if (guess != null ){
             return (
-            <div key={index}>{guess[0]}  {guess[1].toFixed(0)}km</div>
+            <div             style={{
+              width: '300px',
+              height: '25px',
+              border: '1px solid black',
+              margin: '5px',
+              textAlign: 'center'
+            }} key={index}>{guess[0]}  {guess[1].toFixed(0)}km        {guess[2]}       </div>
             )
           } else { 
             return(
@@ -259,7 +295,7 @@ function App() {
               margin: '5px',
             }}
           ></div>
-)
+)     
           }
         })}
       </ul>
