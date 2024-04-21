@@ -244,8 +244,10 @@ function App() {
 
     if (guess == selectedCountry.Country) {
       setMessage( <Highlight query='won'  styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
+      setGameOver(true)
     } else if (newGuesses.every((g) => g !== null)) {
       setMessage("Boo, you lost :( The Country was " +  selectedCountry.Country)
+      setGameOver(true)
     }
     // Calculate distance between guess and target country
 
@@ -290,7 +292,7 @@ function App() {
           highlightFirstSuggestion={true}
 
         />
-      <Button style={{ 'marginLeft': '0.5%'}} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
+      <Button isLoading={gameOver} style={{ 'marginLeft': '0.5%'}} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
 
       </Center>
       <br></br>
@@ -310,7 +312,7 @@ function App() {
             data={elecChartData.data}
             layout={{ width: '50%', height: '5%',         margin: {
               l: 150,  
-            }, title: `Electricity Production by Source (TWh)`, xaxis: { title: 'Source' } }}
+            }, title: `Electricity Production by Source (TWh)`}}
           />
           </Card>
         </div>
