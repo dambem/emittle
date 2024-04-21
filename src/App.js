@@ -2,16 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { ChakraProvider } from '@chakra-ui/react'
 import { Button, ButtonGroup } from '@chakra-ui/react'
-import { Container } from '@chakra-ui/react'
-import { Center, Square, Circle } from '@chakra-ui/react'
-import { Heading, Highlight } from '@chakra-ui/react'
+import { Container, Box } from '@chakra-ui/react'
+import { Center, Square, Circle, Card } from '@chakra-ui/react'
+import { Heading, Highlight, Text, useColorModeValue } from '@chakra-ui/react'
 import Arrow from './Arrow'
 import Autosuggest from 'react-autosuggest';
 import haversine from 'haversine-distance';
 import Papa from 'papaparse'; // Import PapaParse library for parsing CSV
 import Plot from 'react-plotly.js';
-import IcicleChart from './Icicle';
-const TARGET_COUNTRY = { name: 'China', lat: 46.603354, lon: 1.888334 }; // Example target country
+import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
+import { useSpring, animated } from 'react-spring';
+import Footer from './Footer'
 
 function App() {
   const [guess, setGuess] = useState('');
@@ -23,12 +25,13 @@ function App() {
   const [countryLocation, setCountryLocation] = useState([])
   const [data, setData] = useState([]);
   const [elecData, setElecData] = useState([])
-  const [selectedCountry, setSelectedCountry] = useState('China');
   const [sankeyData, setSankeyData] = useState({});
   const [elecChartData, setElecChartData] = useState({})
   const [guesses, setGuesses] = useState(Array(5).fill(null));
   const [gameOver, setGameOver] = useState(false);
   const [message, setMessage] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(null);
+
 // Converts from degrees to radians.
   function toRadians(degrees) {
     return degrees * Math.PI / 180;
@@ -58,6 +61,11 @@ function App() {
     return(bearings[index]);
 
   }
+  const revealAnimation = useSpring({
+    opacity: 1,
+    from: { opacity: 0 },
+    delay: 500,
+  });
 
   useState(() => {
     fetch('/electricitysource.csv')
@@ -71,7 +79,8 @@ function App() {
 
 
   useEffect(() => {
-    const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.Entity === selectedCountry);
+    if (selectedCountry != null) {
+    const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.Entity === selectedCountry.Country);
     const x_data = []
     const y_data = []
     elecFiltered.forEach(entry => {
@@ -81,12 +90,17 @@ function App() {
 
     setElecChartData({
       data: [{
-        x: x_data,
-        y: y_data,
-        type: 'bar'
+        x: y_data,
+        y: x_data,
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: 'rgba(55,128,191,0.6)',
+          width: 1
+        },
       }],
     })
-
+  }
   }, [elecData, selectedCountry]);
 
   useState(() => {
@@ -94,17 +108,20 @@ function App() {
       .then(response => response.text())
       .then(text => {
         const result = Papa.parse(text, { header: true });
-
+        var num = Math.floor(Math.random() * result.data.length);
         const countryList = result.data.map(row => row.Country);
         setCountries(countryList)
         setCountryLocation(result.data)
+        setSelectedCountry(result.data[num])
+        
+
       })
       .catch(error => console.error(error));
   }, []);
 
   useEffect(() => {
     // Filter data based on selected country
-    const countryData = data.filter(entry => entry.Country === selectedCountry);
+    const countryData = data.filter(entry => entry.Country === selectedCountry.Country);
 
     // Prepare data for the Sankey diagram
     const nodes = [];
@@ -189,9 +206,9 @@ function App() {
   const getSuggestionValue = (suggestion) => suggestion;
 
   const renderSuggestion = (suggestion) => (
-    <div>
+    <span>
       {suggestion}
-    </div>
+    </span>
   );
 
   const inputProps = {
@@ -211,21 +228,24 @@ function App() {
     }
 
     const country_loc = countryLocation.filter(entry => entry.Country === guess);
-    const chosen_country = countryLocation.filter(entry => entry.Country === TARGET_COUNTRY.name)
+    // console.log(selectedCountry.lat)
+
     const distance = haversine(
-      { latitude: chosen_country[0].lat, longitude: chosen_country[0].lon },
+      { latitude: selectedCountry.lat, longitude: selectedCountry.lon },
       { latitude: country_loc[0].lat, longitude: country_loc[0].lon }
     )/1000;
 
     const newGuesses = [...guesses];
     const index2 = newGuesses.findIndex((g) => g === null);
-    var degree = bearing(country_loc[0].lat, country_loc[0].lon, chosen_country[0].lat, chosen_country[0].lon)
+    var degree = bearing(country_loc[0].lat, country_loc[0].lon, selectedCountry.lat, selectedCountry.lon)
     newGuesses[index2] = [guess, distance, degree]
+    console.log(guess)
+    console.log(selectedCountry)
 
-    if (guess == TARGET_COUNTRY.name) {
+    if (guess == selectedCountry.Country) {
       setMessage( <Highlight query='won'  styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
     } else if (newGuesses.every((g) => g !== null)) {
-      setMessage("Boo, you lost :(")
+      setMessage("Boo, you lost :( The Country was " +  selectedCountry.Country)
     }
     // Calculate distance between guess and target country
 
@@ -237,84 +257,121 @@ function App() {
   return (
     <ChakraProvider>
 
-    <div className="App">
-      <Center>
-      <Heading>Emittle</Heading>
-      </Center>
-      <Center>
-      <h2>Guess the country based on the emission data</h2>
-      </Center>
-      
-      <Center>
-        <div style={{ 'display': 'flex' }}>
-          <Plot
-            config={{displayModeBar:false}}
-            data={sankeyData.data}
-            layout={{ width: '50%', height: '10%', title: `Emissions Sankey Diagram` }}
-          />
-
-          <Plot
-            config={{displayModeBar:false}}
-            data={elecChartData.data}
-            layout={{ width: '50%', height: '10%', title: `Electricity Production by Source`, xaxis: { title: 'Source' }, yaxis: { title: 'TWh' } }}
-          />
-        </div>
-
-        <select onChange={handleCountryChange} style={{ 'display': 'none' }}>
-          <option value="Iceland">Iceland</option>
-          {/* Populate dropdown with unique countries from data */}
-          {Array.from(new Set(data.map(entry => entry.Country))).map(country => (
-            <option key={country} value={country}>{country}</option>
-          ))}
-        </select>
-
-      </Center>
-      <Center><Heading>{message}</Heading></Center>
+    <Box className="App" bg={useColorModeValue('gray.100', 'gray.700')}>
       <br></br>
       <Center>
-      <ul>
-        {guesses.map((guess, index) => {
-          if (guess != null ){
-            return (
-            <div             style={{
-              width: '300px',
-              height: '25px',
-              border: '1px solid black',
-              margin: '5px',
-              textAlign: 'center'
-            }} key={index}>{guess[0]}  {guess[1].toFixed(0)}km        {guess[2]}       </div>
-            )
-          } else { 
-            return(
-       <div
-            key={index}
-            style={{
-              width: '300px',
-              height: '25px',
-              border: '1px dashed gray',
-              margin: '5px',
-            }}
-          ></div>
-)     
-          }
-        })}
-      </ul>
+
+
+      <Heading
+          fontWeight={600}
+          fontSize={{ base: '3xl', sm: '4xl', md: '6xl' }}
+          lineHeight={'110%'}>
+          <Text as={'span'} color={'orange.400'}>
+            Emittle
+          </Text>
+        </Heading>
+      {/* <Heading>Emittle</Heading> */}
       </Center>
       <Center>
-        <Autosuggest
+      <Text fontSize="lg" color={'gray.500'}>
+      Guess the country based on the emission data
+      </Text>
+      <br></br>
+
+      </Center>
+      <Center>
+      <Autosuggest
           suggestions={suggestions}
           onSuggestionsFetchRequested={onSuggestionsFetchRequested}
           onSuggestionsClearRequested={onSuggestionsClearRequested}
           getSuggestionValue={getSuggestionValue}
           renderSuggestion={renderSuggestion}
           inputProps={inputProps}
+          highlightFirstSuggestion={true}
+
         />
-      <Button onClick={handleGuessSubmit}>Guess</Button>
+      <Button style={{ 'marginLeft': '0.5%'}} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
+
+      </Center>
+      <br></br>
+      <Center>
+        <div style={{ 'display': 'flex' }}>
+          <Card>
+            <Plot
+              config={{displayModeBar:false}}
+              data={sankeyData.data}
+              layout={{ width: '50%', height: '5%', title: `Emissions Sankey Diagram` }}
+            />
+          </Card>
+          <Card>
+
+          <Plot
+            config={{displayModeBar:false}}
+            data={elecChartData.data}
+            layout={{ width: '50%', height: '5%',         margin: {
+              l: 150,  
+            }, title: `Electricity Production by Source (TWh)`, xaxis: { title: 'Source' } }}
+          />
+          </Card>
+        </div>
+
+
+
+      </Center>
+      <Center><Heading>{message}</Heading></Center>
+      <br></br>
+      <Center >
+      <ul >
+        {guesses.map((guess, index) => {
+          if (guess != null ){
+            return (
+            <animated.div             style={{
+              width: '20em',
+              height: '25px',
+              border: '1px solid black',
+              margin: '5px',
+              textAlign: 'center',
+              margin: '10px',
+              paddingBottom: '1%',
+              backgroundColor: 'white',
+              ...revealAnimation
+              // padding: '10px'
+
+            }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km      {guess[2]} </b>  </Text>      </animated.div>
+            )
+          } else { 
+            return(
+       <animated.div
+            key={index}
+            style={{
+              width: '20em',
+              height: '25px',
+              border: '1px dashed gray',
+              margin: '10px',
+              paddingBottom: '5px',
+              backgroundColor: 'white',
+              ...revealAnimation
+
+            }}
+          ></animated.div>
+)     
+          }
+        })}
+      </ul>
+      </Center>
+      <Center>
+
+
       {/* {distanceAway !== null && (
         <p>Distance away: {distanceAway.toFixed(2)} km</p>
       )} */}
       </Center>
-    </div>
+      <br/>
+      <Footer/>
+
+    </Box>
+
+
     </ChakraProvider>
   );
 }
