@@ -2,6 +2,7 @@ import {
     Box,
     chakra,
     Container,
+    Center,
     Link,
     Stack,
     Text,
@@ -90,6 +91,8 @@ import {
             justify={{ base: 'center', md: 'space-between' }}
             align={{ base: 'center', md: 'center' }}>
             <Text>Created by Damian Bemben </Text>
+            <Text>Thanks to <a href='https://games.oec.world/en/tradle/'>Tradle</a>, Wordle & Jack for the inspiration!</Text>
+
             <Stack direction={'row'} spacing={6}>
               <SocialButton label={'Github'} href={'https://github.com/dambem'}>
                 <FaGithub />
@@ -105,6 +108,22 @@ import {
               </SocialButton>
             </Stack>
           </Container>
+          <Stack>
+          <Center> Citations </Center>
+            <Center style={{marginLeft: '10%', marginRight: '10%'}}>          <Text  fontSize='xs'> Emission Data:  EDGAR (Emissions Database for Global Atmospheric Research) Community GHG Database (a collaboration between the European Commission, Joint Research Centre (JRC), the International Energy Agency (IEA), and comprising IEA-EDGAR CO2, EDGAR CH4, EDGAR N2O, EDGAR F-GASES version 8.0, (2023) European Commission.
+            IEA-EDGAR CO2 (v2), a component of the EDGAR (Emissions Database for Global Atmospheric Research) Community GHG database version 8.0 (2023) including or based on data from IEA (2022) Greenhouse Gas Emissions from Energy, www.iea.org/statistics, as modified by the Joint Research Centre.
+            Users of the data are obliged to acknowledge the source of the data also with reference to the EDGAR report webpage (https://edgar.jrc.ec.europa.eu/report_2023) and EDGARv8.0 website (https://edgar.jrc.ec.europa.eu/dataset_ghg80) and/or relevant reports.
+
+            Based on IEA-EDGAR CO2 (v2), EDGAR CH4, EDGAR N2O, EDGAR F-gases, a component of the EDGAR (Emissions Database for Global Atmospheric Research) Community GHG database version 8.0 (2023), derived from IEA (2022) World Energy Balances, www.iea.org/statistics; BP Statistical Review of World Energy (2023), Energy Institute, https://www.energyinst.org/statistical-review (2023); IATA (2023), International Air Transport Association Statistics, www.iata.org/en/iata-repository/pressroom/fact-sheets/industry-statistics; IFA (2022), www.ifastat.org/; FAOSTAT (2023), Statistics Division of the Food and Agricultural Organisation of the UN: www.fao.org/faostat; USGS (2023), USGS Commodity Statistics, (www.usgs.gov/centers/nmic/commodity-statistics-and-information); World Steel Association (2023), Steel Statistical Yearbook 2023, as modified by the Joint Research Centre
+            </Text>
+          </Center>
+          <Center style={{marginLeft: '10%', marginRight: '10%'}}>          <Text  fontSize='xs'> Electricity Demand:            Ember - Yearly Electricity Data (2023); Ember - European Electricity Review (2022); Energy Institute -
+Statistical Review of World Energy (2023) <a href='https://ourworldindata.org/grapher/electricity-prod-source-stacked?tab=table'> Source Here</a>
+          </Text>
+          </Center>
+
+
+          </Stack>
         </Box>
         <br/>
       </Box>

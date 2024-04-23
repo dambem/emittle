@@ -36,7 +36,13 @@ function App() {
   function toRadians(degrees) {
     return degrees * Math.PI / 180;
   };
-  
+  function getDayOfYear() {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    const diff = now - start;
+    const oneDay = 1000 * 60 * 60 * 24;
+    return Math.floor(diff / oneDay);
+  }
   // Converts from radians to degrees.
   function toDegrees(radians) {
     return radians * 180 / Math.PI;
@@ -67,6 +73,8 @@ function App() {
     delay: 500,
   });
 
+
+
   useState(() => {
     fetch('/electricitysource.csv')
       .then(response => response.text())
@@ -80,7 +88,8 @@ function App() {
 
   useEffect(() => {
     if (selectedCountry != null) {
-    const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.Entity === selectedCountry.Country);
+    const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.EDGAR === selectedCountry.EDGAR);
+    // console.log(selectedCountry)
     const x_data = []
     const y_data = []
     elecFiltered.forEach(entry => {
@@ -109,10 +118,16 @@ function App() {
       .then(text => {
         const result = Papa.parse(text, { header: true });
         var num = Math.floor(Math.random() * result.data.length);
+        var day = getDayOfYear()
+        if (day > result.data.length) {
+          day = day - result.data.length
+        }
+        // console.log(num)
         const countryList = result.data.map(row => row.Country);
+        console.log(result.data[day])
         setCountries(countryList)
         setCountryLocation(result.data)
-        setSelectedCountry(result.data[num])
+        setSelectedCountry(result.data[day])
         
 
       })
@@ -121,7 +136,7 @@ function App() {
 
   useEffect(() => {
     // Filter data based on selected country
-    const countryData = data.filter(entry => entry.Country === selectedCountry.Country);
+    const countryData = data.filter(entry => entry.EDGAR === selectedCountry.EDGAR);
 
     // Prepare data for the Sankey diagram
     const nodes = [];
@@ -246,11 +261,11 @@ function App() {
       setMessage( <Highlight query='won'  styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
       setGameOver(true)
     } else if (newGuesses.every((g) => g !== null)) {
-      setMessage("Boo, you lost :( The Country was " +  selectedCountry.Country)
+      setMessage("The Country was " +  selectedCountry.Country )
       setGameOver(true)
     }
     // Calculate distance between guess and target country
-
+    // + " Find out more about them" + <a href='https://www.eia.gov/international/analysis/country/{{selectedCountry.EDGAR}}' > here </a>
     setGuesses(newGuesses);
     // Set distance away
     setDistanceAway(distance);
@@ -299,6 +314,7 @@ function App() {
       <Center>
         <div style={{ 'display': 'flex' }}>
           <Card>
+
             <Plot
               config={{displayModeBar:false}}
               data={sankeyData.data}
