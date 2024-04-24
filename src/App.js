@@ -32,7 +32,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(null);
 
-// Converts from degrees to radians.
+  // Converts from degrees to radians.
   function toRadians(degrees) {
     return degrees * Math.PI / 180;
   };
@@ -48,23 +48,23 @@ function App() {
     return radians * 180 / Math.PI;
   }
 
-  function bearing(startLat, startLng, destLat, destLng){
+  function bearing(startLat, startLng, destLat, destLng) {
     startLat = toRadians(startLat);
     startLng = toRadians(startLng);
     destLat = toRadians(destLat);
     destLng = toRadians(destLng);
-  
+
     const y = Math.sin(destLng - startLng) * Math.cos(destLat);
     const x = Math.cos(startLat) * Math.sin(destLat) -
-          Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
+      Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
     const brng = (toDegrees(Math.atan2(y, x)) + 360) % 360;
     var bearings = ["NE", "E", "SE", "S", "SW", "W", "NW", "N"];
 
     var index = brng - 22.5;
     if (index < 0)
-        index += 360;
+      index += 360;
     index = parseInt(index / 45);
-    return(bearings[index]);
+    return (bearings[index]);
 
   }
   const revealAnimation = useSpring({
@@ -88,28 +88,28 @@ function App() {
 
   useEffect(() => {
     if (selectedCountry != null) {
-    const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.EDGAR === selectedCountry.EDGAR);
-    // console.log(selectedCountry)
-    const x_data = []
-    const y_data = []
-    elecFiltered.forEach(entry => {
-      x_data.push('Gas', 'Coal', 'BioEnergy', 'Hydropower', 'Nuclear', 'Oil', 'Other Renewables', 'Solar', 'Wind')
-      y_data.push(entry.gas, entry.coal, entry.bioenergy, entry.hydro, entry.nuclear, entry.oil, entry.other_renewables, entry.solar, entry.wind)
-    })
+      const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.EDGAR === selectedCountry.EDGAR);
+      // console.log(selectedCountry)
+      const x_data = []
+      const y_data = []
+      elecFiltered.forEach(entry => {
+        x_data.push('Gas', 'Coal', 'BioEnergy', 'Hydropower', 'Nuclear', 'Oil', 'Other Renewables', 'Solar', 'Wind')
+        y_data.push(entry.gas, entry.coal, entry.bioenergy, entry.hydro, entry.nuclear, entry.oil, entry.other_renewables, entry.solar, entry.wind)
+      })
 
-    setElecChartData({
-      data: [{
-        x: y_data,
-        y: x_data,
-        type: 'bar',
-        orientation: 'h',
-        marker: {
-          color: 'rgba(55,128,191,0.6)',
-          width: 1
-        },
-      }],
-    })
-  }
+      setElecChartData({
+        data: [{
+          x: y_data,
+          y: x_data,
+          type: 'bar',
+          orientation: 'h',
+          marker: {
+            color: 'rgba(55,128,191,0.6)',
+            width: 1
+          },
+        }],
+      })
+    }
   }, [elecData, selectedCountry]);
 
   useState(() => {
@@ -128,7 +128,7 @@ function App() {
         setCountries(countryList)
         setCountryLocation(result.data)
         setSelectedCountry(result.data[day])
-        
+
 
       })
       .catch(error => console.error(error));
@@ -248,7 +248,7 @@ function App() {
     const distance = haversine(
       { latitude: selectedCountry.lat, longitude: selectedCountry.lon },
       { latitude: country_loc[0].lat, longitude: country_loc[0].lon }
-    )/1000;
+    ) / 1000;
 
     const newGuesses = [...guesses];
     const index2 = newGuesses.findIndex((g) => g === null);
@@ -258,10 +258,10 @@ function App() {
     console.log(selectedCountry)
 
     if (guess == selectedCountry.Country) {
-      setMessage( <Highlight query='won'  styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
+      setMessage(<Highlight query='won' styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
       setGameOver(true)
     } else if (newGuesses.every((g) => g !== null)) {
-      setMessage("The Country was " +  selectedCountry.Country )
+      setMessage("The Country was " + selectedCountry.Country)
       setGameOver(true)
     }
     // Calculate distance between guess and target country
@@ -274,120 +274,122 @@ function App() {
   return (
     <ChakraProvider>
 
-    <Box className="App" bg={useColorModeValue('gray.100', 'gray.700')}>
-      <br></br>
-      <Center>
+      <Box className="App" bg={useColorModeValue('gray.100', 'gray.700')}>
+        <br></br>
+        <Center>
 
 
-      <Heading
-          fontWeight={600}
-          fontSize={{ base: '3xl', sm: '4xl', md: '6xl' }}
-          lineHeight={'110%'}>
-          <Text as={'span'} color={'orange.400'}>
-            Emittle
+          <Heading
+            fontWeight={600}
+            fontSize={{ base: '3xl', sm: '4xl', md: '6xl' }}
+            lineHeight={'110%'}>
+            <Text as={'span'} color={'orange.400'}>
+              Emittle
+            </Text>
+          </Heading>
+          {/* <Heading>Emittle</Heading> */}
+        </Center>
+        <Center>
+          <Text fontSize="lg" color={'gray.500'}>
+            Guess the country based on the emission data
           </Text>
-        </Heading>
-      {/* <Heading>Emittle</Heading> */}
-      </Center>
-      <Center>
-      <Text fontSize="lg" color={'gray.500'}>
-      Guess the country based on the emission data
-      </Text>
-      <br></br>
+          <br></br>
 
-      </Center>
-      <Center>
-      <Autosuggest
-          suggestions={suggestions}
-          onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-          onSuggestionsClearRequested={onSuggestionsClearRequested}
-          getSuggestionValue={getSuggestionValue}
-          renderSuggestion={renderSuggestion}
-          inputProps={inputProps}
-          highlightFirstSuggestion={true}
+        </Center>
+        <Center>
+          <Autosuggest
+            suggestions={suggestions}
+            onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+            onSuggestionsClearRequested={onSuggestionsClearRequested}
+            getSuggestionValue={getSuggestionValue}
+            renderSuggestion={renderSuggestion}
+            inputProps={inputProps}
+            highlightFirstSuggestion={true}
 
-        />
-      <Button isLoading={gameOver} style={{ 'marginLeft': '0.5%'}} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
-
-      </Center>
-      <br></br>
-      <Center>
-        <div style={{ 'display': 'flex' }}>
-          <Card>
-
-            <Plot
-              config={{displayModeBar:false}}
-              data={sankeyData.data}
-              layout={{ width: '50%', height: '5%', title: `Emissions Sankey Diagram` }}
-            />
-          </Card>
-          <Card>
-
-          <Plot
-            config={{displayModeBar:false}}
-            data={elecChartData.data}
-            layout={{ width: '50%', height: '5%',         margin: {
-              l: 150,  
-            }, title: `Electricity Production by Source (TWh)`}}
           />
-          </Card>
-        </div>
+          <Button isLoading={gameOver} style={{ 'marginLeft': '0.5%' }} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
+
+        </Center>
+        <br></br>
+        <Center>
+          <div style={{ 'display': 'flex' }}>
+            <Card>
+
+              <Plot
+                config={{ displayModeBar: false }}
+                data={sankeyData.data}
+                layout={{ width: '50%', height: '5%', title: `Emissions Sankey Diagram` }}
+              />
+            </Card>
+            <Card>
+
+              <Plot
+                config={{ displayModeBar: false }}
+                data={elecChartData.data}
+                layout={{
+                  width: '50%', height: '5%', margin: {
+                    l: 150,
+                  }, title: `Electricity Production by Source (TWh)`
+                }}
+              />
+            </Card>
+          </div>
 
 
 
-      </Center>
-      <Center><Heading>{message}</Heading></Center>
-      <br></br>
-      <Center >
-      <ul >
-        {guesses.map((guess, index) => {
-          if (guess != null ){
-            return (
-            <animated.div             style={{
-              width: '20em',
-              height: '25px',
-              border: '1px solid black',
-              margin: '5px',
-              textAlign: 'center',
-              margin: '10px',
-              paddingBottom: '1%',
-              backgroundColor: 'white',
-              ...revealAnimation
-              // padding: '10px'
+        </Center>
+        <Center><Heading>{message}</Heading></Center>
+        <br></br>
+        <Center >
+          <ul >
+            {guesses.map((guess, index) => {
+              if (guess != null) {
+                return (
+                  <animated.div style={{
+                    width: '20em',
+                    height: '25px',
+                    border: '1px solid black',
+                    margin: '5px',
+                    textAlign: 'center',
+                    margin: '10px',
+                    paddingBottom: '1%',
+                    backgroundColor: 'white',
+                    ...revealAnimation
+                    // padding: '10px'
 
-            }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km      {guess[2]} </b>  </Text>      </animated.div>
-            )
-          } else { 
-            return(
-       <animated.div
-            key={index}
-            style={{
-              width: '20em',
-              height: '25px',
-              border: '1px dashed gray',
-              margin: '10px',
-              paddingBottom: '5px',
-              backgroundColor: 'white',
-              ...revealAnimation
+                  }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km      {guess[2]} </b>  </Text>      </animated.div>
+                )
+              } else {
+                return (
+                  <animated.div
+                    key={index}
+                    style={{
+                      width: '20em',
+                      height: '25px',
+                      border: '1px dashed gray',
+                      margin: '10px',
+                      paddingBottom: '5px',
+                      backgroundColor: 'white',
+                      ...revealAnimation
 
-            }}
-          ></animated.div>
-)     
-          }
-        })}
-      </ul>
-      </Center>
-      <Center>
+                    }}
+                  ></animated.div>
+                )
+              }
+            })}
+          </ul>
+        </Center>
+        <Center>
 
 
-      {/* {distanceAway !== null && (
+          {/* {distanceAway !== null && (
         <p>Distance away: {distanceAway.toFixed(2)} km</p>
       )} */}
-      </Center>
-      <br/>
-      <Footer/>
+        </Center>
+        <br />
+        <Footer />
 
-    </Box>
+      </Box>
 
 
     </ChakraProvider>
