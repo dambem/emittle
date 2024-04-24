@@ -14,6 +14,8 @@ import TextField from '@mui/material/TextField';
 import Autocomplete from '@mui/material/Autocomplete';
 import { useSpring, animated } from 'react-spring';
 import Footer from './Footer'
+import ReactCountryFlag from "react-country-flag"
+
 
 function App() {
   const [guess, setGuess] = useState('');
@@ -124,8 +126,8 @@ function App() {
         }
         // console.log(num)
         const countryList = result.data.map(row => row.Country);
-        console.log(result.data[day])
-        setCountries(countryList)
+        // console.log(result.data[day])
+        setCountries(result.data)
         setCountryLocation(result.data)
         setSelectedCountry(result.data[day])
 
@@ -206,7 +208,7 @@ function App() {
     const inputValue = value.trim().toLowerCase();
     const inputLength = inputValue.length;
     return inputLength === 0 ? [] : countries.filter(country =>
-      country.toLowerCase().slice(0, inputLength) === inputValue
+      country.Country.toLowerCase().slice(0, inputLength) === inputValue
     ).slice(0, 3);
   };
 
@@ -222,7 +224,8 @@ function App() {
 
   const renderSuggestion = (suggestion) => (
     <span>
-      {suggestion}
+      {suggestion.Country}  <ReactCountryFlag countryCode={suggestion.TWO} svg />           
+
     </span>
   );
 
@@ -357,7 +360,7 @@ function App() {
                     ...revealAnimation
                     // padding: '10px'
 
-                  }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km      {guess[2]} </b>  </Text>      </animated.div>
+                  }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km  {guess[2]} </b>  </Text>      </animated.div>
                 )
               } else {
                 return (
