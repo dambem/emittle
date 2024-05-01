@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChakraProvider } from '@chakra-ui/react'
-import { Button, ButtonGroup } from '@chakra-ui/react'
+import { Button, ButtonGroup, Alert, useDisclosure,  AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogOverlay, AlertDialogContent } from '@chakra-ui/react'
 import { Container, Box } from '@chakra-ui/react'
 import { Center, Square, Circle, Card } from '@chakra-ui/react'
-import { Heading, Highlight, Text, useColorModeValue } from '@chakra-ui/react'
+import { Heading, Highlight, Text, useColorModeValue, AlertDialogHeader, AlertDialogCloseButton } from '@chakra-ui/react'
 import Arrow from './Arrow'
 import Autosuggest from 'react-autosuggest';
 import haversine from 'haversine-distance';
@@ -15,10 +15,14 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { useSpring, animated } from 'react-spring';
 import Footer from './Footer'
 import ReactCountryFlag from "react-country-flag"
+import ConfettiExplosion from 'react-confetti-explosion';
 
 
 function App() {
   const [guess, setGuess] = useState('');
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const cancelRef = React.useRef()
+
   const [suggestions, setSuggestions] = useState([]);
   const [distanceAway, setDistanceAway] = useState(null);
   const [countries, setCountries] = useState([]);
@@ -252,8 +256,9 @@ function App() {
     console.log(selectedCountry)
 
     if (guess == selectedCountry.Country) {
-      setMessage(<Highlight query='won' styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won!</Highlight>)
+      setMessage()
       setGameOver(true)
+      onOpen()
     } else if (newGuesses.every((g) => g !== null)) {
       setMessage("The Country was " + selectedCountry.Country)
       setGameOver(true)
@@ -304,6 +309,26 @@ function App() {
           <Button isLoading={gameOver} style={{ 'marginLeft': '0.5%' }} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
 
         </Center>
+        <AlertDialog
+        motionPreset='slideInBottom'
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+        isOpen={isOpen}
+        isCentered
+      >
+        <AlertDialogOverlay />
+
+        <AlertDialogContent>
+          <AlertDialogHeader>Winner!</AlertDialogHeader>
+          <AlertDialogCloseButton />
+          <AlertDialogBody>
+          <div><ConfettiExplosion /><Highlight query='won' styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won! </Highlight><ConfettiExplosion /></div>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
         <br></br>
         <Center>
           <div style={{ 'display': 'flex' }}>
@@ -332,7 +357,7 @@ function App() {
 
 
         </Center>
-        <Center><Heading>{message}</Heading></Center>
+        <div><br></br><Center><Heading>{message}</Heading></Center></div>
         <br></br>
         <Center >
           <ul >
@@ -340,8 +365,8 @@ function App() {
               if (guess != null) {
                 return (
                   <animated.div style={{
-                    width: '20em',
-                    height: '25px',
+                    width: '25em',
+                    height: '30px',
                     border: '1px solid black',
                     margin: '5px',
                     textAlign: 'center',
@@ -358,8 +383,8 @@ function App() {
                   <animated.div
                     key={index}
                     style={{
-                      width: '20em',
-                      height: '25px',
+                      width: '25em',
+                      height: '30px',
                       border: '1px dashed gray',
                       margin: '10px',
                       paddingBottom: '5px',
