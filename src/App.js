@@ -205,8 +205,6 @@ function App() {
   };
 
   const getSuggestions = (value) => {
-    console.log("Testing")
-    console.log(value)
     const inputValue = value.trim().toLowerCase();
     const inputLength = inputValue.length;
     return inputLength === 0 ? [] : countries.filter(country =>
@@ -238,15 +236,6 @@ function App() {
   };
 
   const handleGuessSubmit = () => {
-    const index = countries.indexOf(guess);
-
-
-    console.log(guess)
-    if (index === -1) {
-      setDistanceAway(null); // Reset distance if the country is not found in the list
-      return;
-    }
-
     const country_loc = countryLocation.filter(entry => entry.Country === guess);
     // console.log(selectedCountry.lat)
 
