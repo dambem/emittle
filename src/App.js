@@ -205,6 +205,8 @@ function App() {
   };
 
   const getSuggestions = (value) => {
+    console.log("Testing")
+    console.log(value)
     const inputValue = value.trim().toLowerCase();
     const inputLength = inputValue.length;
     return inputLength === 0 ? [] : countries.filter(country =>
@@ -220,12 +222,12 @@ function App() {
     setSuggestions([]);
   };
 
-  const getSuggestionValue = (suggestion) => suggestion;
+  const getSuggestionValue = (suggestion) => {
+    return suggestion.Country};
 
   const renderSuggestion = (suggestion) => (
     <span>
       {suggestion.Country}  <ReactCountryFlag countryCode={suggestion.TWO} svg />           
-
     </span>
   );
 
