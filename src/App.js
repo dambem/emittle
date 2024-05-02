@@ -1,21 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
-import { ChakraProvider } from '@chakra-ui/react'
-import { Button, ButtonGroup, Alert, useDisclosure,  AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogOverlay, AlertDialogContent } from '@chakra-ui/react'
-import { Container, Box } from '@chakra-ui/react'
-import { Center, Square, Circle, Card } from '@chakra-ui/react'
-import { Heading, Highlight, Text, useColorModeValue, AlertDialogHeader, AlertDialogCloseButton } from '@chakra-ui/react'
-import Arrow from './Arrow'
-import Autosuggest from 'react-autosuggest';
+import { AlertDialog, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogOverlay, Box, Button, ChakraProvider, Tab, TabList, TabPanel, TabPanels, Tabs, useDisclosure } from '@chakra-ui/react';
+import React, { useEffect, useState } from 'react';
+
+import { AlertDialogCloseButton, AlertDialogHeader, Card, Center, Heading, Highlight, Text, useColorModeValue } from '@chakra-ui/react';
 import haversine from 'haversine-distance';
 import Papa from 'papaparse'; // Import PapaParse library for parsing CSV
-import Plot from 'react-plotly.js';
-import TextField from '@mui/material/TextField';
-import Autocomplete from '@mui/material/Autocomplete';
-import { useSpring, animated } from 'react-spring';
-import Footer from './Footer'
-import ReactCountryFlag from "react-country-flag"
+import Autosuggest from 'react-autosuggest';
 import ConfettiExplosion from 'react-confetti-explosion';
+import ReactCountryFlag from "react-country-flag";
+import Plot from 'react-plotly.js';
+import { useSpring } from 'react-spring';
+import Footer from './Footer';
 
 
 function App() {
@@ -27,14 +22,13 @@ function App() {
   const [distanceAway, setDistanceAway] = useState(null);
   const [countries, setCountries] = useState([]);
   const [countryMap, setCountryMap] = useState([])
-  const [emissionData, setEmissionData] = useState([])
   const [countryLocation, setCountryLocation] = useState([])
   const [data, setData] = useState([]);
   const [elecData, setElecData] = useState([])
   const [sankeyData, setSankeyData] = useState({});
   const [elecChartData, setElecChartData] = useState({})
   const [guesses, setGuesses] = useState(Array(5).fill(null));
-  const [gameOver, setGameOver] = useState(false);
+  const [gameOver, setGameOver] = useState(0);
   const [message, setMessage] = useState('');
   const [selectedCountry, setSelectedCountry] = useState(null);
 
@@ -76,33 +70,37 @@ function App() {
   const revealAnimation = useSpring({
     opacity: 1,
     from: { opacity: 0 },
-    delay: 500,
+    delay: 10000,
   });
-
-
-
-  useState(() => {
-    fetch('/electricitysource.csv')
-      .then(response => response.text())
-      .then(text => {
-        const result = Papa.parse(text, { header: true }).data;
-        setElecData(result)
-      })
-      .catch(error => console.error(error));
+    useEffect(() => {
+      fetchData();
   }, []);
-
-
+  const fetchData = async () => {
+    try {
+        const [elecResponse, countryResponse, emissionResponse] = await Promise.all([
+            fetch('/electricitysource.csv').then(response => response.text()),
+            fetch('/country_csv.csv').then(response => response.text()),
+            fetch('/Emission_Data.csv').then(response => response.text())
+        ]);
+        const [elecData, countryData, emissionData] = await Promise.all([
+            setElecData(Papa.parse(elecResponse, { header: true }).data),
+            Papa.parse(countryResponse, { header: true }).data,
+            setData(Papa.parse(emissionResponse, { header: true }).data)
+        ]);
+        // Process fetched data
+    } catch (error) {
+        console.error('Error fetching data: ', error);
+    }
+};
   useEffect(() => {
     if (selectedCountry != null) {
       const elecFiltered = elecData.filter(entry => entry.Year === '2021' && entry.EDGAR === selectedCountry.EDGAR);
-      // console.log(selectedCountry)
       const x_data = []
       const y_data = []
       elecFiltered.forEach(entry => {
         x_data.push('Gas', 'Coal', 'BioEnergy', 'Hydropower', 'Nuclear', 'Oil', 'Other Renewables', 'Solar', 'Wind')
         y_data.push(entry.gas, entry.coal, entry.bioenergy, entry.hydro, entry.nuclear, entry.oil, entry.other_renewables, entry.solar, entry.wind)
       })
-
       setElecChartData({
         data: [{
           x: y_data,
@@ -123,19 +121,13 @@ function App() {
       .then(response => response.text())
       .then(text => {
         const result = Papa.parse(text, { header: true });
-        var num = Math.floor(Math.random() * result.data.length);
         var day = getDayOfYear()
         if (day > result.data.length) {
           day = day - result.data.length
         }
-        // console.log(num)
-        const countryList = result.data.map(row => row.Country);
-        // console.log(result.data[day])
         setCountries(result.data)
         setCountryLocation(result.data)
         setSelectedCountry(result.data[day])
-
-
       })
       .catch(error => console.error(error));
   }, []);
@@ -191,18 +183,6 @@ function App() {
     setSelectedCountry(event.target.value);
   };
 
-  useState(() => {
-    fetch('/Emission_Data.csv')
-      .then(response => response.text())
-      .then(text => {
-        const result = Papa.parse(text, { header: true }).data;
-        setEmissionData(result)
-        setData(result)
-      })
-      .catch(error => console.error(error));
-  }, []);
-
-
   const handleGuess = (event, { newValue }) => {
     setGuess(newValue);
     setDistanceAway(null);
@@ -252,32 +232,25 @@ function App() {
     const index2 = newGuesses.findIndex((g) => g === null);
     var degree = bearing(country_loc[0].lat, country_loc[0].lon, selectedCountry.lat, selectedCountry.lon)
     newGuesses[index2] = [guess, distance, degree]
-    console.log(guess)
-    console.log(selectedCountry)
 
     if (guess == selectedCountry.Country) {
-      setMessage()
-      setGameOver(true)
+      setGameOver(1)
       onOpen()
     } else if (newGuesses.every((g) => g !== null)) {
       setMessage("The Country was " + selectedCountry.Country)
-      setGameOver(true)
+      setGameOver(2)
+      onOpen()
     }
     // Calculate distance between guess and target country
     // + " Find out more about them" + <a href='https://www.eia.gov/international/analysis/country/{{selectedCountry.EDGAR}}' > here </a>
     setGuesses(newGuesses);
-    // Set distance away
     setDistanceAway(distance);
   };
 
   return (
     <ChakraProvider>
-
       <Box className="App" bg={useColorModeValue('gray.100', 'gray.700')}>
-        <br></br>
         <Center>
-
-
           <Heading
             fontWeight={600}
             fontSize={{ base: '3xl', sm: '4xl', md: '6xl' }}
@@ -306,7 +279,7 @@ function App() {
             highlightFirstSuggestion={true}
 
           />
-          <Button isLoading={gameOver} style={{ 'marginLeft': '0.5%' }} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
+          <Button style={{ 'marginLeft': '0.5%' }} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
 
         </Center>
         <AlertDialog
@@ -317,70 +290,87 @@ function App() {
         isCentered
       >
         <AlertDialogOverlay />
-
         <AlertDialogContent>
-          <AlertDialogHeader>Winner!</AlertDialogHeader>
+          <AlertDialogHeader>
+          {gameOver == 1 ? 
+            <>Winner! </> :
+            <>Loser :(</> 
+          }
+          </AlertDialogHeader>
           <AlertDialogCloseButton />
           <AlertDialogBody>
+          {gameOver == 1 ? 
           <div><ConfettiExplosion /><Highlight query='won' styles={{ px: '2', py: '1', rounded: 'full', bg: 'green.100' }}>Congratulations, you won! </Highlight><ConfettiExplosion /></div>
+          : 
+          <div> <Highlight query='lost' styles={{ px: '2', py: '1', rounded: 'full', bg: 'red.100' }}>Sorry, you lost! </Highlight> </div>
+          }
+          
+          {selectedCountry ? <div> More Information On {selectedCountry.Country} <a href={'https://www.eia.gov/international/analysis/country/'+selectedCountry.EDGAR}> here </a> </div>
+           : null }
           </AlertDialogBody>
           <AlertDialogFooter>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+        </AlertDialog>
 
         <br></br>
         <Center>
-          <div style={{ 'display': 'flex' }}>
-            <Card>
+      <Tabs variant='soft-rounded' colorScheme='green'>
+        <TabList>
+          <Tab>Electricity Production</Tab>
+          <Tab>Emission Sources</Tab>
+        </TabList>
+        <TabPanels>
 
-              <Plot
-                config={{ displayModeBar: false }}
-                data={sankeyData.data}
-                layout={{ width: '50%', height: '5%', title: `Emissions Sankey Diagram` }}
-              />
-            </Card>
+          <TabPanel>
             <Card>
-
               <Plot
-                config={{ displayModeBar: false }}
+                config={{ displayModeBar: false, responsive: true}}
                 data={elecChartData.data}
                 layout={{
-                  width: '50%', height: '5%', margin: {
+                  width: '100%',
+                  height: '300px',
+                  margin: {
                     l: 150,
-                  }, title: `Electricity Production by Source (TWh)`
+                  },
+                  title: `Electricity Production by Source (TWh)`,
                 }}
               />
             </Card>
-          </div>
+          </TabPanel>
 
-
-
-        </Center>
-        <div><br></br><Center><Heading>{message}</Heading></Center></div>
-        <br></br>
+          <TabPanel>
+            <Card>
+              <Plot
+                config={{ displayModeBar: false, responsive: true}}
+                data={sankeyData.data}
+                layout={{ width: '100%', height: '100%', title: `Emission Sources` }}
+              />
+            </Card>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+    </Center>
         <Center >
           <ul >
             {guesses.map((guess, index) => {
               if (guess != null) {
                 return (
-                  <animated.div style={{
+                  <Card style={{
                     width: '25em',
                     height: '30px',
                     border: '1px solid black',
                     margin: '5px',
                     textAlign: 'center',
                     margin: '10px',
-                    paddingBottom: '1%',
                     backgroundColor: 'white',
-                    ...revealAnimation
                     // padding: '10px'
 
-                  }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km  {guess[2]} </b>  </Text>      </animated.div>
+                  }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km  {guess[2]} </b>  </Text>    </Card>
                 )
               } else {
                 return (
-                  <animated.div
+                  <Card
                     key={index}
                     style={{
                       width: '25em',
@@ -389,21 +379,16 @@ function App() {
                       margin: '10px',
                       paddingBottom: '5px',
                       backgroundColor: 'white',
-                      ...revealAnimation
+
 
                     }}
-                  ></animated.div>
+                  ></Card>
                 )
               }
             })}
           </ul>
         </Center>
         <Center>
-
-
-          {/* {distanceAway !== null && (
-        <p>Distance away: {distanceAway.toFixed(2)} km</p>
-      )} */}
         </Center>
         <br />
         <Footer />
