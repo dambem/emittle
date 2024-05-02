@@ -67,11 +67,7 @@ function App() {
     return (bearings[index]);
 
   }
-  const revealAnimation = useSpring({
-    opacity: 1,
-    from: { opacity: 0 },
-    delay: 10000,
-  });
+
     useEffect(() => {
       fetchData();
   }, []);
@@ -107,8 +103,9 @@ function App() {
           y: x_data,
           type: 'bar',
           orientation: 'h',
+          
           marker: {
-            color: 'rgba(55,128,191,0.6)',
+            color: 'orange',
             width: 1
           },
         }],
@@ -209,7 +206,7 @@ function App() {
 
   const renderSuggestion = (suggestion) => (
     <span>
-      {suggestion.Country}  <ReactCountryFlag countryCode={suggestion.TWO} svg />           
+      {suggestion.Country} <ReactCountryFlag countryCode={suggestion.TWO} svg />           
     </span>
   );
 
@@ -220,18 +217,18 @@ function App() {
   };
 
   const handleGuessSubmit = () => {
-    const country_loc = countryLocation.filter(entry => entry.Country === guess);
+    const country = countries.filter(entry => entry.Country === guess)[0];
     // console.log(selectedCountry.lat)
 
     const distance = haversine(
       { latitude: selectedCountry.lat, longitude: selectedCountry.lon },
-      { latitude: country_loc[0].lat, longitude: country_loc[0].lon }
+      { latitude: country.lat, longitude: country.lon }
     ) / 1000;
 
     const newGuesses = [...guesses];
     const index2 = newGuesses.findIndex((g) => g === null);
-    var degree = bearing(country_loc[0].lat, country_loc[0].lon, selectedCountry.lat, selectedCountry.lon)
-    newGuesses[index2] = [guess, distance, degree]
+    var degree = bearing(country.lat, country.lon, selectedCountry.lat, selectedCountry.lon)
+    newGuesses[index2] = [guess, distance, degree, country.TWO]
 
     if (guess == selectedCountry.Country) {
       setGameOver(1)
@@ -265,30 +262,15 @@ function App() {
           <Text fontSize="lg" color={'gray.500'}>
             Guess the country based on the emission data
           </Text>
-          <br></br>
-
         </Center>
-        <Center>
-          <Autosuggest
-            suggestions={suggestions}
-            onSuggestionsFetchRequested={onSuggestionsFetchRequested}
-            onSuggestionsClearRequested={onSuggestionsClearRequested}
-            getSuggestionValue={getSuggestionValue}
-            renderSuggestion={renderSuggestion}
-            inputProps={inputProps}
-            highlightFirstSuggestion={true}
 
-          />
-          <Button style={{ 'marginLeft': '0.5%' }} colorScheme='teal' onClick={handleGuessSubmit}>Guess</Button>
-
-        </Center>
         <AlertDialog
         motionPreset='slideInBottom'
         leastDestructiveRef={cancelRef}
         onClose={onClose}
         isOpen={isOpen}
         isCentered
-      >
+        >
         <AlertDialogOverlay />
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -350,7 +332,22 @@ function App() {
           </TabPanel>
         </TabPanels>
       </Tabs>
+
     </Center>
+    <Center>
+          <Autosuggest
+            suggestions={suggestions}
+            onSuggestionsFetchRequested={onSuggestionsFetchRequested}
+            onSuggestionsClearRequested={onSuggestionsClearRequested}
+            getSuggestionValue={getSuggestionValue}
+            renderSuggestion={renderSuggestion}
+            inputProps={inputProps}
+            highlightFirstSuggestion={true}
+            style={{'height':'100%'}}
+          />
+          <Button style={{ 'marginLeft': '0.5%' }} colorScheme='orange' variant='outline' onClick={handleGuessSubmit}>Guess</Button>
+
+        </Center>
         <Center >
           <ul >
             {guesses.map((guess, index) => {
@@ -366,7 +363,7 @@ function App() {
                     backgroundColor: 'white',
                     // padding: '10px'
 
-                  }} key={index}><Text size={'lg'}>{guess[0]}  <b>{guess[1].toFixed(0)}km  {guess[2]} </b>  </Text>    </Card>
+                  }} key={index}><Text size={'lg'}>{guess[0]} <ReactCountryFlag countryCode={guess[3]} svg /> | <b>{guess[1].toFixed(0)}km  | {guess[2]} </b>  </Text>    </Card>
                 )
               } else {
                 return (

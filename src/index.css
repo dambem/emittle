@@ -12,8 +12,8 @@ code {
     monospace;
 }
 .react-autosuggest__input {
-  width: 240px;
-  height: 30px;
+  width: 18em;
+  height: 100%;
   padding: 10px 20px;
   font-family: Helvetica, sans-serif;
   font-weight: 300;
@@ -38,7 +38,7 @@ code {
   display: block;
   position: absolute;
   /* top: 20%; */
-  width: 280px;
+  width:18em;
   border: 1px solid #aaa;
   background-color: #fff;
   font-family: Helvetica, sans-serif;
